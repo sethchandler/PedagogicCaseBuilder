@@ -1,0 +1,341 @@
+import React, { useState, useEffect } from 'react'
+import { 
+  Save, 
+  Trash2, 
+  Link, 
+  Unlink, 
+  Zap, 
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  FileText,
+  Users,
+  BookOpen,
+  Target
+} from 'lucide-react'
+import useStore from '../store'
+import { 
+  COMPONENT_TYPES, 
+  COMPONENT_STATUS,
+  getComponentTypeDisplayName, 
+  getComponentStatusInfo,
+  validateComponent,
+  getDependents
+} from '../utils/componentUtils'
+
+console.log('🎯 Loading DetailView component...')
+
+const DetailView = () => {
+  const { caseFile, currentComponentId, isGenerating, actions } = useStore()
+  const [localTitle, setLocalTitle] = useState('')
+  const [localUserInput, setLocalUserInput] = useState('')
+  const [selectedDependencies, setSelectedDependencies] = useState([])
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+
+  const currentComponent = currentComponentId ? caseFile.get(currentComponentId) : null
+
+  console.log('🎯 DetailView render - current component:', currentComponent?.id, currentComponent?.type)
+
+  // Sync local state with current component
+  useEffect(() => {
+    if (currentComponent) {
+      console.log('🔄 Syncing DetailView state with component:', currentComponent.id)
+      setLocalTitle(currentComponent.title || '')
+      setLocalUserInput(currentComponent.userInput || '')
+      setSelectedDependencies([...currentComponent.dependencies])
+      setHasUnsavedChanges(false)
+    } else {
+      setLocalTitle('')
+      setLocalUserInput('')
+      setSelectedDependencies([])
+      setHasUnsavedChanges(false)
+    }
+  }, [currentComponent])
+
+  // Track changes to show unsaved indicator with proper memoization
+  useEffect(() => {
+    if (!currentComponent) {
+      setHasUnsavedChanges(false)
+      return
+    }
+
+    const hasChanges = 
+      localTitle !== currentComponent.title ||
+      localUserInput !== currentComponent.userInput ||
+      JSON.stringify([...selectedDependencies].sort()) !== JSON.stringify([...currentComponent.dependencies].sort())
+
+    setHasUnsavedChanges(hasChanges)
+  }, [localTitle, localUserInput, selectedDependencies, currentComponent?.title, currentComponent?.userInput, currentComponent?.dependencies])
+
+  if (!currentComponent) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-white">
+        <div className="text-center">
+          <BookOpen size={64} className="text-gray-300 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Select a Component
+          </h2>
+          <p className="text-gray-600">
+            Choose a component from the sidebar to view and edit its details.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  const handleSave = () => {
+    console.log('💾 Saving component changes:', currentComponent.id)
+    
+    const updates = {}
+    if (localTitle !== currentComponent.title) updates.title = localTitle
+    if (localUserInput !== currentComponent.userInput) updates.userInput = localUserInput
+    if (JSON.stringify(selectedDependencies.sort()) !== JSON.stringify(currentComponent.dependencies.sort())) {
+      updates.dependencies = selectedDependencies
+    }
+
+    if (Object.keys(updates).length > 0) {
+      actions.updateComponent(currentComponent.id, updates)
+      actions.addNotification('Component saved successfully', 'success')
+    }
+  }
+
+  const handleGenerate = async () => {
+    console.log('⚡ Generating AI content for component:', currentComponent.id)
+    
+    // Save any changes first
+    handleSave()
+    
+    // Use the store's AI generation action
+    await actions.generateAIContent(currentComponent.id)
+  }
+
+  const handleDelete = () => {
+    console.log('🗑️ Deleting component:', currentComponent.id)
+    
+    const dependents = getDependents(currentComponent.id, caseFile)
+    if (dependents.length > 0) {
+      actions.addNotification(
+        `Cannot delete: ${dependents.length} other component(s) depend on this one`,
+        'error'
+      )
+      return
+    }
+
+    if (confirm(`Are you sure you want to delete "${currentComponent.title}"?`)) {
+      actions.deleteComponent(currentComponent.id)
+      actions.addNotification('Component deleted successfully', 'success')
+    }
+  }
+
+  const handleDependencyToggle = (componentId) => {
+    console.log('🔗 Toggling dependency:', componentId)
+    
+    const newDependencies = selectedDependencies.includes(componentId)
+      ? selectedDependencies.filter(id => id !== componentId)
+      : [...selectedDependencies, componentId]
+    
+    setSelectedDependencies(newDependencies)
+  }
+
+  const statusInfo = getComponentStatusInfo(currentComponent.status)
+  const availableComponents = Array.from(caseFile.values()).filter(comp => 
+    comp.id !== currentComponent.id
+  )
+
+  const getTypeIcon = (type) => {
+    const icons = {
+      [COMPONENT_TYPES.GOALS]: Target,
+      [COMPONENT_TYPES.CASE]: BookOpen,
+      [COMPONENT_TYPES.WITNESS]: Users,
+      [COMPONENT_TYPES.DOCUMENT]: FileText
+    }
+    return icons[type] || FileText
+  }
+
+  const TypeIcon = getTypeIcon(currentComponent.type)
+
+  return (
+    <div className="flex-1 bg-white overflow-y-auto">
+      <div className="max-w-4xl mx-auto p-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <TypeIcon size={24} className="text-gray-600" />
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                {getComponentTypeDisplayName(currentComponent.type)}
+              </h1>
+              <div className="flex items-center space-x-2 mt-1">
+                <span className={`text-xs px-2 py-1 rounded-full ${statusInfo.color}`}>
+                  {statusInfo.icon} {statusInfo.label}
+                </span>
+                {hasUnsavedChanges && (
+                  <span className="text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded-full">
+                    ● Unsaved changes
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={handleSave}
+              disabled={!hasUnsavedChanges}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                hasUnsavedChanges
+                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              <Save size={16} />
+              <span>Save</span>
+            </button>
+
+            <button
+              onClick={handleGenerate}
+              disabled={isGenerating || !localUserInput.trim()}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
+                isGenerating || !localUserInput.trim()
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-green-600 text-white hover:bg-green-700'
+              }`}
+            >
+              <Zap size={16} />
+              <span>{isGenerating ? 'Generating...' : 'Generate'}</span>
+            </button>
+
+            <button
+              onClick={handleDelete}
+              className="flex items-center space-x-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            >
+              <Trash2 size={16} />
+              <span>Delete</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="space-y-6">
+          {/* Title */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Title
+            </label>
+            <input
+              type="text"
+              value={localTitle}
+              onChange={(e) => setLocalTitle(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder={`Enter ${getComponentTypeDisplayName(currentComponent.type).toLowerCase()} title...`}
+            />
+          </div>
+
+          {/* User Input */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Your Input
+            </label>
+            <textarea
+              value={localUserInput}
+              onChange={(e) => setLocalUserInput(e.target.value)}
+              rows={6}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder={`Describe what you want for this ${getComponentTypeDisplayName(currentComponent.type).toLowerCase()}...`}
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              This input will be used by the AI to generate content for this component.
+            </p>
+          </div>
+
+          {/* Dependencies */}
+          {availableComponents.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Dependencies
+              </label>
+              <p className="text-xs text-gray-500 mb-3">
+                Select which components this one should depend on. The AI will use their content as context.
+              </p>
+              
+              <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3">
+                {availableComponents.map(component => {
+                  const ComponentIcon = getTypeIcon(component.type)
+                  const isSelected = selectedDependencies.includes(component.id)
+                  
+                  return (
+                    <label
+                      key={component.id}
+                      className="flex items-center space-x-3 cursor-pointer p-2 rounded hover:bg-gray-50"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleDependencyToggle(component.id)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <ComponentIcon size={16} className="text-gray-500" />
+                      <div className="flex-1">
+                        <div className="text-sm font-medium text-gray-900">
+                          {component.title}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {getComponentTypeDisplayName(component.type)}
+                        </div>
+                      </div>
+                      {isSelected && (
+                        <Link size={14} className="text-blue-600" />
+                      )}
+                    </label>
+                  )
+                })}
+              </div>
+              
+              {selectedDependencies.length > 0 && (
+                <div className="mt-2 text-xs text-gray-600">
+                  {selectedDependencies.length} component(s) selected as dependencies
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* AI Generated Content */}
+          {currentComponent.aiGeneratedContent && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                AI Generated Content
+              </label>
+              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                <div className="whitespace-pre-wrap text-sm text-gray-800">
+                  {currentComponent.aiGeneratedContent}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Component Info */}
+          <div className="pt-6 border-t border-gray-200">
+            <h3 className="text-sm font-medium text-gray-700 mb-3">Component Information</h3>
+            <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
+              <div>
+                <span className="font-medium">ID:</span> {currentComponent.id}
+              </div>
+              <div>
+                <span className="font-medium">Last Updated:</span>{' '}
+                {new Date(currentComponent.lastUpdated).toLocaleString()}
+              </div>
+              <div>
+                <span className="font-medium">Dependencies:</span> {currentComponent.dependencies.length}
+              </div>
+              <div>
+                <span className="font-medium">Status:</span> {statusInfo.label}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default DetailView
