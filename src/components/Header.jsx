@@ -138,10 +138,10 @@ const Header = () => {
               console.log('🔍 Consistency check button clicked')
               actions.runConsistencyCheck()
             }}
-            className="p-2 rounded-lg hover:bg-blue-50 text-blue-600 transition-colors"
+            className="p-3 rounded-lg hover:bg-purple-50 text-purple-600 transition-colors"
             title="Run Consistency Check"
           >
-            <CheckCircle size={18} />
+            <CheckCircle size={32} />
           </button>
 
           {/* API Key Configuration */}

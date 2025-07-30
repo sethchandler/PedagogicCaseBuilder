@@ -63,23 +63,21 @@ const buildPrompt = (component, dependencyComponents) => {
     context = '\n\nContext from related components:\n'
     dependencyComponents.forEach(dep => {
       context += `\n${dep.type} - "${dep.title}":\n`
-      if (dep.aiGeneratedContent) {
-        context += `${dep.aiGeneratedContent.substring(0, 500)}...\n`
-      } else if (dep.userInput) {
-        context += `User input: ${dep.userInput.substring(0, 300)}...\n`
+      if (dep.content) {
+        context += `${dep.content.substring(0, 500)}...\n`
       }
     })
   }
 
   // User prompt with instructions and context
-  userPrompt = `Please create content for a ${component.type} component titled "${component.title}".
+  userPrompt = `Please enhance and improve the following content for a ${component.type} component titled "${component.title}".
 
-User requirements:
-${component.userInput}
+Current content:
+${component.content}
 
 ${context}
 
-Please provide detailed, realistic content that fits the educational context and maintains consistency with the related components.`
+Please provide an enhanced version that is more detailed, realistic, and fits the educational context while maintaining consistency with the related components. Keep the core ideas but expand, refine, and improve the content.`
 
   console.log('📝 Prompt built - system length:', systemPrompt.length, 'user length:', userPrompt.length)
   
@@ -238,8 +236,8 @@ export const generateContent = async (component, dependencyComponents = []) => {
   
   try {
     // Validate inputs
-    if (!component.userInput || component.userInput.trim() === '') {
-      throw new Error('User input is required for content generation.')
+    if (!component.content || component.content.trim() === '') {
+      throw new Error('Content is required for AI enhancement.')
     }
 
     // Build the prompt

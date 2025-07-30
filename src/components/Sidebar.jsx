@@ -54,7 +54,7 @@ const Sidebar = () => {
     actions.addComponent({
       type,
       title: `New ${getComponentTypeDisplayName(type)}`,
-      userInput: '',
+      content: '',
       dependencies: []
     })
     setShowAddMenu(false)
@@ -101,10 +101,10 @@ const Sidebar = () => {
               </span>
             </div>
             
-            {component.userInput && (
+            {component.content && (
               <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-                {component.userInput.substring(0, 100)}
-                {component.userInput.length > 100 && '...'}
+                {component.content.substring(0, 100)}
+                {component.content.length > 100 && '...'}
               </p>
             )}
             

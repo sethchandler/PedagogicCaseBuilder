@@ -28,7 +28,7 @@ console.log('🎯 Loading DetailView component...')
 const DetailView = () => {
   const { caseFile, currentComponentId, isGenerating, actions } = useStore()
   const [localTitle, setLocalTitle] = useState('')
-  const [localUserInput, setLocalUserInput] = useState('')
+  const [localContent, setLocalContent] = useState('')
   const [selectedDependencies, setSelectedDependencies] = useState([])
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
@@ -41,12 +41,12 @@ const DetailView = () => {
     if (currentComponent) {
       console.log('🔄 Syncing DetailView state with component:', currentComponent.id)
       setLocalTitle(currentComponent.title || '')
-      setLocalUserInput(currentComponent.userInput || '')
+      setLocalContent(currentComponent.content || '')
       setSelectedDependencies([...currentComponent.dependencies])
       setHasUnsavedChanges(false)
     } else {
       setLocalTitle('')
-      setLocalUserInput('')
+      setLocalContent('')
       setSelectedDependencies([])
       setHasUnsavedChanges(false)
     }
@@ -61,11 +61,11 @@ const DetailView = () => {
 
     const hasChanges = 
       localTitle !== currentComponent.title ||
-      localUserInput !== currentComponent.userInput ||
+      localContent !== currentComponent.content ||
       JSON.stringify([...selectedDependencies].sort()) !== JSON.stringify([...currentComponent.dependencies].sort())
 
     setHasUnsavedChanges(hasChanges)
-  }, [localTitle, localUserInput, selectedDependencies, currentComponent?.title, currentComponent?.userInput, currentComponent?.dependencies])
+  }, [localTitle, localContent, selectedDependencies, currentComponent?.title, currentComponent?.content, currentComponent?.dependencies])
 
   if (!currentComponent) {
     return (
@@ -88,7 +88,7 @@ const DetailView = () => {
     
     const updates = {}
     if (localTitle !== currentComponent.title) updates.title = localTitle
-    if (localUserInput !== currentComponent.userInput) updates.userInput = localUserInput
+    if (localContent !== currentComponent.content) updates.content = localContent
     if (JSON.stringify(selectedDependencies.sort()) !== JSON.stringify(currentComponent.dependencies.sort())) {
       updates.dependencies = selectedDependencies
     }
@@ -194,9 +194,9 @@ const DetailView = () => {
 
             <button
               onClick={handleGenerate}
-              disabled={isGenerating || !localUserInput.trim()}
+              disabled={isGenerating || !localContent.trim()}
               className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
-                isGenerating || !localUserInput.trim()
+                isGenerating || !localContent.trim()
                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                   : 'bg-green-600 text-white hover:bg-green-700'
               }`}
@@ -231,20 +231,20 @@ const DetailView = () => {
             />
           </div>
 
-          {/* User Input */}
+          {/* Current Content */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Your Input
+              Current Content
             </label>
             <textarea
-              value={localUserInput}
-              onChange={(e) => setLocalUserInput(e.target.value)}
-              rows={6}
+              value={localContent}
+              onChange={(e) => setLocalContent(e.target.value)}
+              rows={8}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder={`Describe what you want for this ${getComponentTypeDisplayName(currentComponent.type).toLowerCase()}...`}
+              placeholder={`Enter content for this ${getComponentTypeDisplayName(currentComponent.type).toLowerCase()}...`}
             />
             <p className="text-xs text-gray-500 mt-1">
-              This input will be used by the AI to enhance this component with generated content.
+              This is the main content for your component. You can type here directly or use AI enhancement.
             </p>
           </div>
 
@@ -299,17 +299,45 @@ const DetailView = () => {
             </div>
           )}
 
-          {/* AI Generated Content */}
-          {currentComponent.aiGeneratedContent && (
+          {/* AI Proposal */}
+          {currentComponent.hasProposal && currentComponent.aiProposal && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                AI Generated Content
-              </label>
-              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                <div className="whitespace-pre-wrap text-sm text-gray-800">
-                  {currentComponent.aiGeneratedContent}
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  AI Proposal
+                </label>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => actions.acceptProposal(currentComponent.id)}
+                    className="flex items-center space-x-1 px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                    title="Replace current content with this proposal"
+                  >
+                    <span>↻ Replace</span>
+                  </button>
+                  <button
+                    onClick={() => actions.appendProposal(currentComponent.id)}
+                    className="flex items-center space-x-1 px-3 py-1.5 text-sm bg-green-600 text-white rounded hover:bg-green-700"
+                    title="Add this proposal to the end of current content"
+                  >
+                    <span>+ Append</span>
+                  </button>
+                  <button
+                    onClick={() => actions.rejectProposal(currentComponent.id)}
+                    className="flex items-center space-x-1 px-3 py-1.5 text-sm bg-gray-600 text-white rounded hover:bg-gray-700"
+                    title="Dismiss this proposal"
+                  >
+                    <span>✗ Reject</span>
+                  </button>
                 </div>
               </div>
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="whitespace-pre-wrap text-sm text-gray-800">
+                  {currentComponent.aiProposal}
+                </div>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Review this AI-generated proposal. <strong>Replace</strong> to overwrite current content, <strong>Append</strong> to add to the end, or <strong>Reject</strong> to dismiss.
+              </p>
             </div>
           )}
 

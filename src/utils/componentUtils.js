@@ -19,7 +19,7 @@ export const COMPONENT_STATUS = {
 }
 
 // Create a new component with default values
-export const createComponent = (type, title = '', userInput = '') => {
+export const createComponent = (type, title = '', content = '') => {
   console.log('🏗️ Creating new component:', type, title)
   
   return {
@@ -27,8 +27,9 @@ export const createComponent = (type, title = '', userInput = '') => {
     type,
     title: title || `New ${type}`,
     status: COMPONENT_STATUS.SKETCH,
-    userInput,
-    aiGeneratedContent: '',
+    content, // Single unified content field
+    aiProposal: '', // AI suggestions go here temporarily
+    hasProposal: false, // Flag to show/hide proposal section
     dependencies: [],
     lastUpdated: new Date().toISOString()
   }
@@ -169,8 +170,7 @@ export const filterComponents = (components, searchQuery) => {
   return components.filter(component => {
     return (
       component.title.toLowerCase().includes(query) ||
-      component.userInput.toLowerCase().includes(query) ||
-      component.aiGeneratedContent.toLowerCase().includes(query) ||
+      component.content.toLowerCase().includes(query) ||
       getComponentTypeDisplayName(component.type).toLowerCase().includes(query)
     )
   })

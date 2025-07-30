@@ -179,9 +179,9 @@ const TemplateSelector = ({ isOpen, onClose }) => {
                                   </h4>
                                 </div>
                                 <p className="text-sm text-gray-600 mb-2">
-                                  {component.userInput.length > 150 
-                                    ? component.userInput.substring(0, 150) + '...'
-                                    : component.userInput
+                                  {component.content.length > 150 
+                                    ? component.content.substring(0, 150) + '...'
+                                    : component.content
                                   }
                                 </p>
                                 {component.dependencies.length > 0 && (

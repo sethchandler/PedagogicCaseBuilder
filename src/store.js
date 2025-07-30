@@ -37,8 +37,9 @@ const useStore = create((set, get) => ({
         type: component.type,
         title: component.title || `New ${component.type}`,
         status: 'SKETCH',
-        userInput: component.userInput || '',
-        aiGeneratedContent: component.aiGeneratedContent || '',
+        content: component.content || '',
+        aiProposal: component.aiProposal || '',
+        hasProposal: component.hasProposal || false,
         dependencies: component.dependencies || [],
         lastUpdated: new Date().toISOString(),
         ...component
@@ -464,10 +465,10 @@ const useStore = create((set, get) => ({
         return
       }
 
-      // Validate user input
-      if (!component.userInput || component.userInput.trim() === '') {
-        console.error('❌ No user input for generation')
-        state.actions.addNotification('User input is required for content generation', 'error')
+      // Validate content input
+      if (!component.content || component.content.trim() === '') {
+        console.error('❌ No content for generation')
+        state.actions.addNotification('Content is required for AI enhancement', 'error')
         return
       }
 
@@ -495,14 +496,15 @@ const useStore = create((set, get) => ({
           return
         }
         
-        // Update component with generated content
+        // Update component with AI proposal
         state.actions.updateComponent(componentId, {
           status: 'GENERATED',
-          aiGeneratedContent: result.content
+          aiProposal: result.content,
+          hasProposal: true
         })
 
-        console.log('✅ AI content generation successful')
-        state.actions.addNotification('Content generated successfully!', 'success')
+        console.log('✅ AI proposal generated successfully')
+        state.actions.addNotification('AI proposal ready for review!', 'success')
 
         // Log usage info if available
         if (result.usage) {
@@ -556,7 +558,7 @@ const useStore = create((set, get) => ({
       
       // Check if there's content to analyze
       const components = Array.from(state.caseFile.values())
-      const hasContent = components.some(c => c.aiGeneratedContent || c.userInput)
+      const hasContent = components.some(c => c.content && c.content.trim())
       
       if (!hasContent) {
         state.actions.addNotification('Please add some content to analyze for inconsistencies', 'warning')
@@ -622,6 +624,73 @@ const useStore = create((set, get) => ({
         consistencyReport: state.consistencyReport ? 
           { ...state.consistencyReport, showModal: false } : null
       }))
+    },
+
+    // Accept AI proposal - replace content and clear proposal
+    acceptProposal: (componentId) => {
+      console.log('✅ Replacing content with AI proposal for component:', componentId)
+      const state = get()
+      const component = state.caseFile.get(componentId)
+      
+      if (!component || !component.hasProposal) {
+        console.error('❌ No proposal to accept for component:', componentId)
+        return
+      }
+      
+      state.actions.updateComponent(componentId, {
+        content: component.aiProposal,
+        aiProposal: '',
+        hasProposal: false,
+        status: 'SKETCH' // Reset to allow further editing/enhancement
+      })
+      
+      state.actions.addNotification('Content replaced with AI proposal!', 'success')
+    },
+
+    // Append AI proposal to existing content
+    appendProposal: (componentId) => {
+      console.log('➕ Appending AI proposal to content for component:', componentId)
+      const state = get()
+      const component = state.caseFile.get(componentId)
+      
+      if (!component || !component.hasProposal) {
+        console.error('❌ No proposal to append for component:', componentId)
+        return
+      }
+      
+      // Combine existing content with proposal, adding proper spacing
+      const existingContent = component.content || ''
+      const separator = existingContent.trim() ? '\n\n' : '' // Add spacing if there's existing content
+      const combinedContent = existingContent + separator + component.aiProposal
+      
+      state.actions.updateComponent(componentId, {
+        content: combinedContent,
+        aiProposal: '',
+        hasProposal: false,
+        status: 'SKETCH' // Reset to allow further editing/enhancement
+      })
+      
+      state.actions.addNotification('AI proposal appended to content!', 'success')
+    },
+
+    // Reject AI proposal - just clear the proposal
+    rejectProposal: (componentId) => {
+      console.log('❌ Rejecting AI proposal for component:', componentId)
+      const state = get()
+      const component = state.caseFile.get(componentId)
+      
+      if (!component || !component.hasProposal) {
+        console.error('❌ No proposal to reject for component:', componentId)
+        return
+      }
+      
+      state.actions.updateComponent(componentId, {
+        aiProposal: '',
+        hasProposal: false,
+        status: 'SKETCH' // Reset status
+      })
+      
+      state.actions.addNotification('Proposal rejected', 'info')
     }
   }
 }))

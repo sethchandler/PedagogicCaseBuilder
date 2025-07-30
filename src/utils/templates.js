@@ -14,37 +14,37 @@ export const TEMPLATES = {
       {
         type: COMPONENT_TYPES.GOALS,
         title: 'Learning Goals',
-        userInput: 'Students will understand the basics of civil litigation procedures, evidence evaluation, and witness credibility assessment. They will learn to analyze legal arguments and apply relevant statutes and case law.',
+        content: 'Students will understand the basics of civil litigation procedures, evidence evaluation, and witness credibility assessment. They will learn to analyze legal arguments and apply relevant statutes and case law.',
         dependencies: []
       },
       {
         type: COMPONENT_TYPES.CASE,
         title: 'Case Background',
-        userInput: 'A contract dispute between a small business owner and a supplier regarding delayed delivery of goods that resulted in lost profits. The business owner is seeking damages for breach of contract.',
+        content: 'A contract dispute between a small business owner and a supplier regarding delayed delivery of goods that resulted in lost profits. The business owner is seeking damages for breach of contract.',
         dependencies: []
       },
       {
         type: COMPONENT_TYPES.WITNESS,
         title: 'Business Owner (Plaintiff)',
-        userInput: 'The plaintiff who owns a retail electronics store. Claims the delayed delivery caused them to miss the holiday sales season, resulting in significant lost revenue.',
+        content: 'The plaintiff who owns a retail electronics store. Claims the delayed delivery caused them to miss the holiday sales season, resulting in significant lost revenue.',
         dependencies: ['case-background']
       },
       {
         type: COMPONENT_TYPES.WITNESS,
         title: 'Supplier Representative (Defendant)',
-        userInput: 'The defendant company\'s sales manager who handled the contract. Claims the delay was due to unforeseen manufacturing issues and disputes the extent of claimed damages.',
+        content: 'The defendant company\'s sales manager who handled the contract. Claims the delay was due to unforeseen manufacturing issues and disputes the extent of claimed damages.',
         dependencies: ['case-background']
       },
       {
         type: COMPONENT_TYPES.DOCUMENT,
         title: 'Purchase Contract',
-        userInput: 'The original purchase agreement between the parties, including delivery terms, payment schedules, and any force majeure clauses.',
+        content: 'The original purchase agreement between the parties, including delivery terms, payment schedules, and any force majeure clauses.',
         dependencies: ['case-background']
       },
       {
         type: COMPONENT_TYPES.DOCUMENT,
         title: 'Financial Records',
-        userInput: 'Sales records and financial statements showing the plaintiff\'s revenue patterns during comparable periods, used to calculate alleged damages.',
+        content: 'Sales records and financial statements showing the plaintiff\'s revenue patterns during comparable periods, used to calculate alleged damages.',
         dependencies: ['case-background', 'business-owner-plaintiff']
       }
     ]
@@ -58,37 +58,37 @@ export const TEMPLATES = {
       {
         type: COMPONENT_TYPES.GOALS,
         title: 'Learning Goals',
-        userInput: 'Students will learn criminal procedure, evidence rules, constitutional protections, and the burden of proof in criminal cases. They will practice analyzing witness credibility and circumstantial evidence.',
+        content: 'Students will learn criminal procedure, evidence rules, constitutional protections, and the burden of proof in criminal cases. They will practice analyzing witness credibility and circumstantial evidence.',
         dependencies: []
       },
       {
         type: COMPONENT_TYPES.CASE,
         title: 'Case Background',
-        userInput: 'A burglary case where the defendant is accused of breaking into a residential home while the owners were away. Evidence includes fingerprints, witness testimony, and security camera footage.',
+        content: 'A burglary case where the defendant is accused of breaking into a residential home while the owners were away. Evidence includes fingerprints, witness testimony, and security camera footage.',
         dependencies: []
       },
       {
         type: COMPONENT_TYPES.WITNESS,
         title: 'Neighbor Witness',
-        userInput: 'A neighbor who claims to have seen someone matching the defendant\'s description near the victim\'s house on the night of the burglary.',
+        content: 'A neighbor who claims to have seen someone matching the defendant\'s description near the victim\'s house on the night of the burglary.',
         dependencies: ['case-background']
       },
       {
         type: COMPONENT_TYPES.WITNESS,
         title: 'Police Detective',
-        userInput: 'The investigating officer who processed the crime scene, collected fingerprint evidence, and conducted the initial suspect interview.',
+        content: 'The investigating officer who processed the crime scene, collected fingerprint evidence, and conducted the initial suspect interview.',
         dependencies: ['case-background']
       },
       {
         type: COMPONENT_TYPES.DOCUMENT,
         title: 'Forensic Report',
-        userInput: 'Laboratory analysis of fingerprints found at the scene, with comparison to the defendant\'s prints and conclusions about matches.',
+        content: 'Laboratory analysis of fingerprints found at the scene, with comparison to the defendant\'s prints and conclusions about matches.',
         dependencies: ['case-background', 'police-detective']
       },
       {
         type: COMPONENT_TYPES.DOCUMENT,
         title: 'Security Camera Footage',
-        userInput: 'Video evidence from a nearby business security camera showing a figure near the victim\'s property, with analysis of timing and visual identification.',
+        content: 'Video evidence from a nearby business security camera showing a figure near the victim\'s property, with analysis of timing and visual identification.',
         dependencies: ['case-background']
       }
     ]
@@ -102,37 +102,37 @@ export const TEMPLATES = {
       {
         type: COMPONENT_TYPES.GOALS,
         title: 'Learning Goals',
-        userInput: 'Students will analyze ethical frameworks, stakeholder theory, and corporate social responsibility. They will practice ethical decision-making and understand the consequences of business decisions on various stakeholders.',
+        content: 'Students will analyze ethical frameworks, stakeholder theory, and corporate social responsibility. They will practice ethical decision-making and understand the consequences of business decisions on various stakeholders.',
         dependencies: []
       },
       {
         type: COMPONENT_TYPES.CASE,
         title: 'Company Situation',
-        userInput: 'A pharmaceutical company has developed a life-saving drug but faces pressure to price it affordably while recovering R&D costs and satisfying shareholders. Different stakeholders have conflicting interests.',
+        content: 'A pharmaceutical company has developed a life-saving drug but faces pressure to price it affordably while recovering R&D costs and satisfying shareholders. Different stakeholders have conflicting interests.',
         dependencies: []
       },
       {
         type: COMPONENT_TYPES.WITNESS,
         title: 'CEO',
-        userInput: 'The company CEO who must balance shareholder returns with public health concerns and regulatory pressures.',
+        content: 'The company CEO who must balance shareholder returns with public health concerns and regulatory pressures.',
         dependencies: ['company-situation']
       },
       {
         type: COMPONENT_TYPES.WITNESS,
         title: 'Patient Advocate',
-        userInput: 'A healthcare advocate representing patients who need the medication but cannot afford high prices.',
+        content: 'A healthcare advocate representing patients who need the medication but cannot afford high prices.',
         dependencies: ['company-situation']
       },
       {
         type: COMPONENT_TYPES.DOCUMENT,
         title: 'Financial Analysis',
-        userInput: 'Company financial projections showing R&D costs, manufacturing expenses, and various pricing scenarios with their impact on profitability.',
+        content: 'Company financial projections showing R&D costs, manufacturing expenses, and various pricing scenarios with their impact on profitability.',
         dependencies: ['company-situation', 'ceo']
       },
       {
         type: COMPONENT_TYPES.DOCUMENT,
         title: 'Market Research',
-        userInput: 'Analysis of patient demographics, insurance coverage patterns, and competitor pricing for similar medications.',
+        content: 'Analysis of patient demographics, insurance coverage patterns, and competitor pricing for similar medications.',
         dependencies: ['company-situation', 'patient-advocate']
       }
     ]
@@ -148,7 +148,7 @@ const processTemplate = (template) => {
   
   // First pass: create components with IDs
   template.components.forEach((comp, index) => {
-    const component = createComponent(comp.type, comp.title, comp.userInput)
+    const component = createComponent(comp.type, comp.title, comp.content)
     
     // Create a mapping from title-based ID to actual ID for dependency resolution
     const titleId = comp.title.toLowerCase().replace(/[^a-z0-9]/g, '-')
@@ -222,7 +222,7 @@ export const validateTemplate = (template) => {
     template.components.forEach((comp, index) => {
       if (!comp.type) errors.push(`Component ${index}: type is required`)
       if (!comp.title) errors.push(`Component ${index}: title is required`)
-      if (!comp.userInput) errors.push(`Component ${index}: userInput is required`)
+      if (!comp.content) errors.push(`Component ${index}: content is required`)
       if (!Array.isArray(comp.dependencies)) errors.push(`Component ${index}: dependencies must be an array`)
     })
   }

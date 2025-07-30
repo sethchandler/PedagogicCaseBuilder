@@ -29,8 +29,7 @@ export const formatCaseFileForAnalysis = (caseFile) => {
     formattedContent += '## LEARNING GOALS\n\n';
     componentsByType.GOALS.forEach(comp => {
       formattedContent += `### ${comp.title}\n`;
-      if (comp.userInput) formattedContent += `User Input: ${comp.userInput}\n`;
-      if (comp.aiGeneratedContent) formattedContent += `\n${comp.aiGeneratedContent}\n`;
+      if (comp.content) formattedContent += `${comp.content}\n`;
       formattedContent += '\n---\n\n';
     });
   }
@@ -40,8 +39,7 @@ export const formatCaseFileForAnalysis = (caseFile) => {
     formattedContent += '## CASE DESCRIPTION\n\n';
     componentsByType.CASE.forEach(comp => {
       formattedContent += `### ${comp.title}\n`;
-      if (comp.userInput) formattedContent += `User Input: ${comp.userInput}\n`;
-      if (comp.aiGeneratedContent) formattedContent += `\n${comp.aiGeneratedContent}\n`;
+      if (comp.content) formattedContent += `${comp.content}\n`;
       formattedContent += '\n---\n\n';
     });
   }
@@ -51,8 +49,7 @@ export const formatCaseFileForAnalysis = (caseFile) => {
     formattedContent += '## WITNESS TESTIMONIES\n\n';
     componentsByType.WITNESS.forEach(comp => {
       formattedContent += `### ${comp.title}\n`;
-      if (comp.userInput) formattedContent += `User Input: ${comp.userInput}\n`;
-      if (comp.aiGeneratedContent) formattedContent += `\n${comp.aiGeneratedContent}\n`;
+      if (comp.content) formattedContent += `${comp.content}\n`;
       formattedContent += '\n---\n\n';
     });
   }
@@ -62,8 +59,7 @@ export const formatCaseFileForAnalysis = (caseFile) => {
     formattedContent += '## DOCUMENTS\n\n';
     componentsByType.DOCUMENT.forEach(comp => {
       formattedContent += `### ${comp.title}\n`;
-      if (comp.userInput) formattedContent += `User Input: ${comp.userInput}\n`;
-      if (comp.aiGeneratedContent) formattedContent += `\n${comp.aiGeneratedContent}\n`;
+      if (comp.content) formattedContent += `${comp.content}\n`;
       formattedContent += '\n---\n\n';
     });
   }
