@@ -7,7 +7,9 @@ node_modules/
 coverage/
 
 # Production builds
+dist/
 build/
+docs/
 
 # Environment variables
 .env
