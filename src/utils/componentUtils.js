@@ -22,7 +22,7 @@ export const COMPONENT_STATUS = {
 export const createComponent = (type, title = '', content = '') => {
   console.log('🏗️ Creating new component:', type, title)
   
-  return {
+  const baseComponent = {
     id: `${type.toLowerCase()}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     type,
     title: title || `New ${type}`,
@@ -33,6 +33,14 @@ export const createComponent = (type, title = '', content = '') => {
     dependencies: [],
     lastUpdated: new Date().toISOString()
   }
+  
+  // Add image fields for document components
+  if (type === COMPONENT_TYPES.DOCUMENT) {
+    baseComponent.imageUrl = ''
+    baseComponent.imageAltText = ''
+  }
+  
+  return baseComponent
 }
 
 // Get component type display name

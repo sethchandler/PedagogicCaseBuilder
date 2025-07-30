@@ -29,10 +29,40 @@ const DetailView = () => {
   const { caseFile, currentComponentId, isGenerating, actions } = useStore()
   const [localTitle, setLocalTitle] = useState('')
   const [localContent, setLocalContent] = useState('')
+  const [localImageUrl, setLocalImageUrl] = useState('')
+  const [localImageAltText, setLocalImageAltText] = useState('')
   const [selectedDependencies, setSelectedDependencies] = useState([])
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [imageUrlError, setImageUrlError] = useState('')
 
   const currentComponent = currentComponentId ? caseFile.get(currentComponentId) : null
+
+  // Validate image URL
+  const validateImageUrl = (url) => {
+    if (!url.trim()) {
+      setImageUrlError('')
+      return true
+    }
+
+    try {
+      const urlObj = new URL(url)
+      if (!['http:', 'https:'].includes(urlObj.protocol)) {
+        setImageUrlError('URL must start with http:// or https://')
+        return false
+      }
+
+      setImageUrlError('')
+      return true
+    } catch (error) {
+      setImageUrlError('Please enter a valid URL')
+      return false
+    }
+  }
+
+  const handleImageUrlChange = (url) => {
+    setLocalImageUrl(url)
+    validateImageUrl(url)
+  }
 
   console.log('🎯 DetailView render - current component:', currentComponent?.id, currentComponent?.type)
 
@@ -42,12 +72,18 @@ const DetailView = () => {
       console.log('🔄 Syncing DetailView state with component:', currentComponent.id)
       setLocalTitle(currentComponent.title || '')
       setLocalContent(currentComponent.content || '')
+      setLocalImageUrl(currentComponent.imageUrl || '')
+      setLocalImageAltText(currentComponent.imageAltText || '')
       setSelectedDependencies([...currentComponent.dependencies])
+      setImageUrlError('')
       setHasUnsavedChanges(false)
     } else {
       setLocalTitle('')
       setLocalContent('')
+      setLocalImageUrl('')
+      setLocalImageAltText('')
       setSelectedDependencies([])
+      setImageUrlError('')
       setHasUnsavedChanges(false)
     }
   }, [currentComponent])
@@ -62,10 +98,12 @@ const DetailView = () => {
     const hasChanges = 
       localTitle !== currentComponent.title ||
       localContent !== currentComponent.content ||
+      localImageUrl !== (currentComponent.imageUrl || '') ||
+      localImageAltText !== (currentComponent.imageAltText || '') ||
       JSON.stringify([...selectedDependencies].sort()) !== JSON.stringify([...currentComponent.dependencies].sort())
 
     setHasUnsavedChanges(hasChanges)
-  }, [localTitle, localContent, selectedDependencies, currentComponent?.title, currentComponent?.content, currentComponent?.dependencies])
+  }, [localTitle, localContent, localImageUrl, localImageAltText, selectedDependencies, currentComponent?.title, currentComponent?.content, currentComponent?.imageUrl, currentComponent?.imageAltText, currentComponent?.dependencies])
 
   if (!currentComponent) {
     return (
@@ -86,9 +124,17 @@ const DetailView = () => {
   const handleSave = () => {
     console.log('💾 Saving component changes:', currentComponent.id)
     
+    // Prevent saving if there are validation errors
+    if (imageUrlError) {
+      actions.addNotification('Please fix the image URL error before saving', 'error')
+      return
+    }
+    
     const updates = {}
     if (localTitle !== currentComponent.title) updates.title = localTitle
     if (localContent !== currentComponent.content) updates.content = localContent
+    if (localImageUrl !== (currentComponent.imageUrl || '')) updates.imageUrl = localImageUrl
+    if (localImageAltText !== (currentComponent.imageAltText || '')) updates.imageAltText = localImageAltText
     if (JSON.stringify(selectedDependencies.sort()) !== JSON.stringify(currentComponent.dependencies.sort())) {
       updates.dependencies = selectedDependencies
     }
@@ -247,6 +293,99 @@ const DetailView = () => {
               This is the main content for your component. You can type here directly or use AI enhancement.
             </p>
           </div>
+
+          {/* Image Fields - Only for Document Components */}
+          {currentComponent.type === 'DOCUMENT' && (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Image URL (Optional)
+                </label>
+                <input
+                  type="url"
+                  value={localImageUrl}
+                  onChange={(e) => handleImageUrlChange(e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent ${
+                    imageUrlError 
+                      ? 'border-red-300 focus:ring-red-500' 
+                      : 'border-gray-300 focus:ring-blue-500'
+                  }`}
+                  placeholder="https://example.com/image.jpg"
+                />
+                {imageUrlError && (
+                  <p className="text-xs text-red-600 mt-1">
+                    {imageUrlError}
+                  </p>
+                )}
+                <div className="text-xs text-gray-500 mt-1">
+                  <p className="mb-1">
+                    Add a URL to an image. This can be any web URL that serves an image - doesn't need to end in .jpg/.png.
+                  </p>
+                  <p className="font-medium">Suggested hosting services:</p>
+                  <ul className="list-disc list-inside ml-2 space-y-0.5">
+                    <li>GitHub: Upload to your repository and use the raw URL</li>
+                    <li>Imgur: Free image hosting with direct links</li>
+                    <li>Google Drive: Make public and use direct link</li>
+                    <li>CDN services: Cloudinary, AWS S3, etc.</li>
+                  </ul>
+                  <p className="mt-2 text-amber-600">
+                    ⚠️ External links may break over time. Consider hosting images in the same repository as your case files.
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Image Description (Alt Text)
+                </label>
+                <input
+                  type="text"
+                  value={localImageAltText}
+                  onChange={(e) => setLocalImageAltText(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Describe the image for accessibility"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Provide a brief description of the image for accessibility and context.
+                </p>
+              </div>
+
+              {/* Image Preview */}
+              {localImageUrl && !imageUrlError && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Image Preview
+                  </label>
+                  <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <img
+                      src={localImageUrl}
+                      alt={localImageAltText || 'Document image'}
+                      className="max-w-full h-auto max-h-64 rounded shadow-sm"
+                      onError={(e) => {
+                        e.target.style.display = 'none'
+                        e.target.nextSibling.style.display = 'block'
+                      }}
+                      onLoad={(e) => {
+                        e.target.style.display = 'block'
+                        e.target.nextSibling.style.display = 'none'
+                      }}
+                    />
+                    <div 
+                      className="text-red-600 text-sm bg-red-50 p-3 rounded border"
+                      style={{ display: 'none' }}
+                    >
+                      ⚠️ Could not load image from this URL. Please verify the link and ensure the image is publicly accessible.
+                    </div>
+                  </div>
+                  {localImageAltText && (
+                    <p className="text-xs text-gray-600 mt-2 italic">
+                      Alt text: {localImageAltText}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Dependencies */}
           {availableComponents.length > 0 && (

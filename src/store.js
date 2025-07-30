@@ -45,6 +45,12 @@ const useStore = create((set, get) => ({
         ...component
       }
       
+      // Add image fields for document components
+      if (component.type === 'DOCUMENT') {
+        newComponent.imageUrl = component.imageUrl || ''
+        newComponent.imageAltText = component.imageAltText || ''
+      }
+      
       newCaseFile.set(component.id, newComponent)
       
       // Save state to history before making changes

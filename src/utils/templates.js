@@ -39,13 +39,17 @@ export const TEMPLATES = {
         type: COMPONENT_TYPES.DOCUMENT,
         title: 'Purchase Contract',
         content: 'The original purchase agreement between the parties, including delivery terms, payment schedules, and any force majeure clauses.',
-        dependencies: ['case-background']
+        dependencies: ['case-background'],
+        imageUrl: '',
+        imageAltText: ''
       },
       {
         type: COMPONENT_TYPES.DOCUMENT,
         title: 'Financial Records',
         content: 'Sales records and financial statements showing the plaintiff\'s revenue patterns during comparable periods, used to calculate alleged damages.',
-        dependencies: ['case-background', 'business-owner-plaintiff']
+        dependencies: ['case-background', 'business-owner-plaintiff'],
+        imageUrl: '',
+        imageAltText: ''
       }
     ]
   },
@@ -83,13 +87,17 @@ export const TEMPLATES = {
         type: COMPONENT_TYPES.DOCUMENT,
         title: 'Forensic Report',
         content: 'Laboratory analysis of fingerprints found at the scene, with comparison to the defendant\'s prints and conclusions about matches.',
-        dependencies: ['case-background', 'police-detective']
+        dependencies: ['case-background', 'police-detective'],
+        imageUrl: '',
+        imageAltText: ''
       },
       {
         type: COMPONENT_TYPES.DOCUMENT,
         title: 'Security Camera Footage',
         content: 'Video evidence from a nearby business security camera showing a figure near the victim\'s property, with analysis of timing and visual identification.',
-        dependencies: ['case-background']
+        dependencies: ['case-background'],
+        imageUrl: '',
+        imageAltText: ''
       }
     ]
   },
@@ -127,13 +135,17 @@ export const TEMPLATES = {
         type: COMPONENT_TYPES.DOCUMENT,
         title: 'Financial Analysis',
         content: 'Company financial projections showing R&D costs, manufacturing expenses, and various pricing scenarios with their impact on profitability.',
-        dependencies: ['company-situation', 'ceo']
+        dependencies: ['company-situation', 'ceo'],
+        imageUrl: '',
+        imageAltText: ''
       },
       {
         type: COMPONENT_TYPES.DOCUMENT,
         title: 'Market Research',
         content: 'Analysis of patient demographics, insurance coverage patterns, and competitor pricing for similar medications.',
-        dependencies: ['company-situation', 'patient-advocate']
+        dependencies: ['company-situation', 'patient-advocate'],
+        imageUrl: '',
+        imageAltText: ''
       }
     ]
   }
