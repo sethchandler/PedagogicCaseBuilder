@@ -87,6 +87,81 @@ Please provide detailed, realistic content that fits the educational context and
 }
 
 // Make API call to OpenAI
+export const callOpenAI = async (prompt, options = {}) => {
+  const messages = [
+    { role: 'user', content: prompt }
+  ];
+  
+  const apiKey = getApiKey()
+  if (!apiKey) {
+    throw new Error('OpenAI API key not found. Please configure your API key in settings.')
+  }
+
+  console.log('🌐 Making OpenAI API call...')
+
+  const requestBody = {
+    model: options.model || DEFAULT_MODEL,
+    messages,
+    max_tokens: options.max_tokens || MAX_TOKENS,
+    temperature: options.temperature !== undefined ? options.temperature : TEMPERATURE
+  }
+
+  console.log('📤 Request details:', {
+    model: requestBody.model,
+    messageCount: messages.length,
+    maxTokens: requestBody.max_tokens,
+    temperature: requestBody.temperature
+  })
+
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 60000) // 60 second timeout
+
+  let response
+  try {
+    response = await fetch(OPENAI_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify(requestBody),
+      signal: controller.signal
+    })
+    
+    clearTimeout(timeoutId)
+  } catch (error) {
+    clearTimeout(timeoutId)
+    if (error.name === 'AbortError') {
+      throw new Error('Request timed out. Please try again.')
+    }
+    throw error
+  }
+
+  console.log('📥 API response status:', response.status)
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    console.error('❌ API call failed:', response.status, errorData)
+    
+    // Handle specific error types
+    if (response.status === 401) {
+      throw new Error('Invalid API key. Please check your OpenAI API key.')
+    } else if (response.status === 429) {
+      throw new Error('API rate limit exceeded. Please try again later.')
+    } else if (response.status === 403) {
+      throw new Error('API access forbidden. Please check your OpenAI account status.')
+    } else {
+      throw new Error(`API error (${response.status}): ${errorData.error?.message || 'Unknown error'}`)
+    }
+  }
+
+  const data = await response.json()
+  console.log('✅ API call successful - tokens used:', data.usage?.total_tokens || 'unknown')
+  
+  return data.choices?.[0]?.message?.content || ''
+}
+
+// Make API call to OpenAI (internal use)
 const makeApiCall = async (messages) => {
   const apiKey = getApiKey()
   if (!apiKey) {

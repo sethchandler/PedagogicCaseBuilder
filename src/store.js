@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { generateContent, hasApiKey } from './services/openai'
 import { getDependencyChain } from './utils/componentUtils'
+import { analyzeConsistency } from './services/consistencyAnalysis'
 
 console.log('📦 Initializing Zustand store...')
 
@@ -15,6 +16,7 @@ const useStore = create((set, get) => ({
   lastSaveTimestamp: null,
   notifications: [],
   activeGenerationRequests: new Set(), // Track active API requests
+  consistencyReport: null, // Holds AI consistency analysis results
 
   // Actions
   actions: {
@@ -540,116 +542,86 @@ const useStore = create((set, get) => ({
       }
     },
 
-    // Consistency check for the entire case file
-    runConsistencyCheck: () => {
-      console.log('🔍 Running consistency check...')
+    // AI-powered consistency check for content analysis
+    runConsistencyCheck: async () => {
+      console.log('🔍 Running AI consistency check...')
       const state = get()
-      const issues = []
+      
+      // Check if API key is available
+      if (!hasApiKey()) {
+        console.error('❌ No API key available for consistency check')
+        state.actions.addNotification('OpenAI API key required for consistency analysis', 'error')
+        return
+      }
+      
+      // Check if there's content to analyze
       const components = Array.from(state.caseFile.values())
+      const hasContent = components.some(c => c.aiGeneratedContent || c.userInput)
       
-      // Check 1: Validate all components have required fields
-      components.forEach(component => {
-        if (!component.id) issues.push(`Component missing ID: ${component.title}`)
-        if (!component.title || component.title.trim() === '') issues.push(`Component missing title: ${component.id}`)
-        if (!component.type) issues.push(`Component missing type: ${component.title}`)
-        if (!component.status) issues.push(`Component missing status: ${component.title}`)
-      })
+      if (!hasContent) {
+        state.actions.addNotification('Please add some content to analyze for inconsistencies', 'warning')
+        return
+      }
       
-      // Check 2: Validate all dependencies exist
-      components.forEach(component => {
-        component.dependencies.forEach(depId => {
-          if (!state.caseFile.has(depId)) {
-            issues.push(`${component.title} depends on non-existent component: ${depId}`)
-          }
-        })
-      })
-      
-      // Check 3: Check for circular dependencies
-      components.forEach(component => {
-        if (state.actions.hasCircularDependency(component.id, component.dependencies)) {
-          issues.push(`Circular dependency detected involving: ${component.title}`)
+      try {
+        state.actions.setGenerating(true)
+        state.actions.addNotification('Analyzing case for inconsistencies...', 'info')
+        
+        // Run the AI analysis
+        const result = await analyzeConsistency(state.caseFile)
+        
+        if (result.success && result.inconsistencies.length > 0) {
+          // Store results and trigger modal
+          set({ 
+            consistencyReport: {
+              inconsistencies: result.inconsistencies,
+              analyzedAt: result.analyzedAt,
+              showModal: true
+            }
+          })
+          
+          state.actions.addNotification(
+            `Found ${result.inconsistencies.length} potential inconsistencies`, 
+            'warning'
+          )
+        } else if (result.success && result.inconsistencies.length === 0) {
+          state.actions.addNotification('No inconsistencies found! Your case appears consistent.', 'success')
         }
-      })
+        
+      } catch (error) {
+        console.error('❌ Consistency check failed:', error)
+        state.actions.addNotification(
+          error.message || 'Failed to analyze consistency', 
+          'error'
+        )
+      } finally {
+        state.actions.setGenerating(false)
+      }
+    },
+    
+    // Update consistency report status
+    updateConsistencyStatus: (issueId, newStatus) => {
+      const state = get()
+      if (!state.consistencyReport) return
       
-      // Check 4: Check for orphaned components (no dependents and not root-level)
-      const hasDependents = new Set()
-      components.forEach(component => {
-        component.dependencies.forEach(depId => {
-          hasDependents.add(depId)
-        })
-      })
-      
-      const orphanedComponents = components.filter(component => 
-        !hasDependents.has(component.id) && 
-        component.dependencies.length > 0 &&
-        component.type !== 'GOALS' // Goals can be root level
+      const updatedIssues = state.consistencyReport.inconsistencies.map(issue =>
+        issue.id === issueId ? { ...issue, status: newStatus } : issue
       )
       
-      orphanedComponents.forEach(component => {
-        issues.push(`Potentially orphaned component: ${component.title} (has dependencies but no dependents)`)
-      })
-      
-      // Check 5: Validate component content completeness
-      components.forEach(component => {
-        if (component.status === 'SKETCH' && (!component.userInput || component.userInput.trim() === '')) {
-          issues.push(`${component.title} has no user input - consider adding content or generating AI content`)
-        }
-        
-        if (component.status === 'ERROR') {
-          issues.push(`${component.title} has generation errors - consider regenerating content`)
+      set({
+        consistencyReport: {
+          ...state.consistencyReport,
+          inconsistencies: updatedIssues
         }
       })
-      
-      // Check 6: Validate logical structure
-      const goalComponents = components.filter(c => c.type === 'GOALS')
-      const caseComponents = components.filter(c => c.type === 'CASE')
-      
-      if (goalComponents.length === 0) {
-        issues.push('No learning goals defined - consider adding learning objectives')
-      }
-      
-      if (caseComponents.length === 0) {
-        issues.push('No case description defined - consider adding a case background')
-      }
-      
-      if (goalComponents.length > 1) {
-        issues.push('Multiple learning goals components found - consider consolidating')
-      }
-      
-      // Report results
-      console.log('🔍 Consistency check complete:', issues.length, 'issues found')
-      
-      if (issues.length === 0) {
-        state.actions.addNotification('✅ Consistency check passed! No issues found.', 'success')
-      } else {
-        console.warn('⚠️ Consistency issues:', issues)
-        
-        // Show summary notification
-        state.actions.addNotification(
-          `⚠️ Found ${issues.length} consistency issue${issues.length > 1 ? 's' : ''}. Check console for details.`, 
-          'warning'
-        )
-        
-        // Log each issue individually for debugging
-        issues.forEach((issue, index) => {
-          console.warn(`Issue ${index + 1}:`, issue)
-        })
-      }
-      
-      return {
-        passed: issues.length === 0,
-        issues,
-        componentCount: components.length,
-        summary: {
-          totalComponents: components.length,
-          goalsComponents: goalComponents.length,
-          caseComponents: caseComponents.length,
-          witnessComponents: components.filter(c => c.type === 'WITNESS').length,
-          documentComponents: components.filter(c => c.type === 'DOCUMENT').length,
-          generatedComponents: components.filter(c => c.status === 'GENERATED').length,
-          errorComponents: components.filter(c => c.status === 'ERROR').length
-        }
-      }
+    },
+    
+    // Close consistency report modal
+    closeConsistencyReport: () => {
+      set(state => ({
+        consistencyReport: state.consistencyReport ? 
+          { ...state.consistencyReport, showModal: false } : null
+      }))
     }
   }
 }))

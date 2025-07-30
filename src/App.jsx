@@ -5,6 +5,7 @@ import DetailView from './components/DetailView'
 import Notifications from './components/Notifications'
 import ApiKeyModal from './components/ApiKeyModal'
 import ErrorBoundary from './components/ErrorBoundary'
+import ConsistencyReportModal from './components/ConsistencyReportModal'
 import useStore from './store'
 import { hasApiKey } from './services/openai'
 
@@ -98,6 +99,9 @@ function App() {
           isOpen={showApiKeyModal} 
           onClose={() => setShowApiKeyModal(false)} 
         />
+        
+        {/* Consistency Report Modal */}
+        <ConsistencyReportModal />
       </div>
     </ErrorBoundary>
   )
