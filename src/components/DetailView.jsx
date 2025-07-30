@@ -100,7 +100,7 @@ const DetailView = () => {
   }
 
   const handleGenerate = async () => {
-    console.log('⚡ Generating AI content for component:', currentComponent.id)
+    console.log('⚡ Enhancing component with AI:', currentComponent.id)
     
     // Save any changes first
     handleSave()
@@ -202,7 +202,7 @@ const DetailView = () => {
               }`}
             >
               <Zap size={16} />
-              <span>{isGenerating ? 'Generating...' : 'Generate'}</span>
+              <span>{isGenerating ? 'Enhancing...' : 'AI Enhance'}</span>
             </button>
 
             <button
@@ -244,7 +244,7 @@ const DetailView = () => {
               placeholder={`Describe what you want for this ${getComponentTypeDisplayName(currentComponent.type).toLowerCase()}...`}
             />
             <p className="text-xs text-gray-500 mt-1">
-              This input will be used by the AI to generate content for this component.
+              This input will be used by the AI to enhance this component with generated content.
             </p>
           </div>
 

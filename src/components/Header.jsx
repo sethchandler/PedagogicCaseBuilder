@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Undo2, Redo2, Save, Download, Upload, Settings, Key } from 'lucide-react'
+import { Undo2, Redo2, Save, Download, Upload, Settings, Key, CheckCircle, Trash2 } from 'lucide-react'
 import useStore from '../store'
 import { hasApiKey } from '../services/openai'
 import ApiKeyModal from './ApiKeyModal'
@@ -132,6 +132,18 @@ const Header = () => {
             </button>
           </div>
 
+          {/* Consistency Check */}
+          <button
+            onClick={() => {
+              console.log('🔍 Consistency check button clicked')
+              actions.runConsistencyCheck()
+            }}
+            className="p-2 rounded-lg hover:bg-blue-50 text-blue-600 transition-colors"
+            title="Run Consistency Check"
+          >
+            <CheckCircle size={18} />
+          </button>
+
           {/* API Key Configuration */}
           <button
             onClick={() => {
@@ -146,6 +158,21 @@ const Header = () => {
             title={apiKeyConfigured ? 'API Key Configured' : 'Configure API Key'}
           >
             <Key size={18} />
+          </button>
+
+          {/* Clear All Data */}
+          <button
+            onClick={() => {
+              if (confirm('Are you sure you want to clear all data? This cannot be undone.')) {
+                console.log('🗑️ Clear all data button clicked')
+                actions.clearAllData()
+                actions.addNotification('All data cleared successfully', 'success')
+              }
+            }}
+            className="p-2 rounded-lg hover:bg-red-50 text-red-600 transition-colors"
+            title="Clear All Data"
+          >
+            <Trash2 size={18} />
           </button>
 
           {/* Settings button (placeholder for future features) */}

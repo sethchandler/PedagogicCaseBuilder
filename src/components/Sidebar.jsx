@@ -174,8 +174,10 @@ const Sidebar = () => {
         {/* Template selector button */}
         <button
           onClick={() => {
-            console.log('📋 Template selector opened')
+            console.log('📋 Template selector button clicked - opening modal')
+            console.log('📋 Current showTemplateSelector state:', showTemplateSelector)
             setShowTemplateSelector(true)
+            console.log('📋 Set showTemplateSelector to true')
           }}
           className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
         >
@@ -225,23 +227,9 @@ const Sidebar = () => {
           <div className="text-center py-12">
             <BookOpen size={48} className="text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No Components Yet</h3>
-            <p className="text-gray-600 text-sm mb-4">
-              Get started by adding your first component or selecting a template.
+            <p className="text-gray-600 text-sm">
+              Get started by clicking 'Use Template' or 'Add Component' in the toolbar above.
             </p>
-            <div className="space-y-2">
-              <button
-                onClick={() => setShowTemplateSelector(true)}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-              >
-                Start with Template
-              </button>
-              <button
-                onClick={() => setShowAddMenu(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Add Your First Component
-              </button>
-            </div>
           </div>
         ) : filteredAndSortedComponents.length === 0 ? (
           <div className="text-center py-8">
@@ -268,6 +256,7 @@ const Sidebar = () => {
       )}
 
       {/* Template Selector Modal */}
+      {console.log('🔥 Sidebar rendering TemplateSelector with isOpen:', showTemplateSelector)}
       <TemplateSelector 
         isOpen={showTemplateSelector}
         onClose={() => setShowTemplateSelector(false)}

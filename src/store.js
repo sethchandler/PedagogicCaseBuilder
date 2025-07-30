@@ -312,8 +312,8 @@ const useStore = create((set, get) => ({
       return false
     },
 
-    // Export case file
-    exportCaseFile: () => {
+    // Export case file with proper save dialog
+    exportCaseFile: async () => {
       const state = get()
       console.log('📤 Exporting case file...')
       
@@ -323,7 +323,46 @@ const useStore = create((set, get) => ({
         version: '1.0'
       }
       
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+      const jsonContent = JSON.stringify(exportData, null, 2)
+      const blob = new Blob([jsonContent], { type: 'application/json' })
+      
+      // Use File System Access API if available (modern browsers)
+      if ('showSaveFilePicker' in window) {
+        try {
+          console.log('🎯 Using File System Access API for save dialog')
+          
+          const fileHandle = await window.showSaveFilePicker({
+            suggestedName: `case-file-${new Date().toISOString().split('T')[0]}.json`,
+            types: [
+              {
+                description: 'JSON files',
+                accept: {
+                  'application/json': ['.json'],
+                },
+              },
+            ],
+          })
+          
+          const writable = await fileHandle.createWritable()
+          await writable.write(jsonContent)
+          await writable.close()
+          
+          console.log('✅ Case file saved successfully with save dialog')
+          state.actions.addNotification('Case file saved successfully!', 'success')
+          return
+          
+        } catch (error) {
+          if (error.name === 'AbortError') {
+            console.log('💾 Save cancelled by user')
+            return
+          }
+          console.error('❌ Save dialog failed:', error)
+          // Fall back to download method
+        }
+      }
+      
+      // Fallback: Traditional download method
+      console.log('📤 Using fallback download method')
       const url = URL.createObjectURL(blob)
       
       const a = document.createElement('a')
@@ -334,7 +373,8 @@ const useStore = create((set, get) => ({
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
       
-      console.log('✅ Case file exported successfully')
+      console.log('✅ Case file downloaded successfully')
+      state.actions.addNotification('Case file downloaded to your Downloads folder', 'info')
     },
 
     // Import case file
@@ -373,6 +413,26 @@ const useStore = create((set, get) => ({
     setGenerating: (isGenerating) => {
       console.log('⚡ Setting generation status:', isGenerating)
       set({ isGenerating })
+    },
+
+    // Clear all data (reset app)
+    clearAllData: () => {
+      console.log('🗑️ Clearing all application data...')
+      
+      // Clear localStorage
+      localStorage.removeItem('pedagogic-case-builder')
+      
+      // Reset state
+      set({
+        caseFile: new Map(),
+        history: [],
+        historyIndex: -1,
+        currentComponentId: null,
+        searchQuery: '',
+        notifications: []
+      })
+      
+      console.log('✅ All data cleared successfully')
     },
 
     // Generate AI content for a component
@@ -477,6 +537,118 @@ const useStore = create((set, get) => ({
         }))
         
         state.actions.setGenerating(false)
+      }
+    },
+
+    // Consistency check for the entire case file
+    runConsistencyCheck: () => {
+      console.log('🔍 Running consistency check...')
+      const state = get()
+      const issues = []
+      const components = Array.from(state.caseFile.values())
+      
+      // Check 1: Validate all components have required fields
+      components.forEach(component => {
+        if (!component.id) issues.push(`Component missing ID: ${component.title}`)
+        if (!component.title || component.title.trim() === '') issues.push(`Component missing title: ${component.id}`)
+        if (!component.type) issues.push(`Component missing type: ${component.title}`)
+        if (!component.status) issues.push(`Component missing status: ${component.title}`)
+      })
+      
+      // Check 2: Validate all dependencies exist
+      components.forEach(component => {
+        component.dependencies.forEach(depId => {
+          if (!state.caseFile.has(depId)) {
+            issues.push(`${component.title} depends on non-existent component: ${depId}`)
+          }
+        })
+      })
+      
+      // Check 3: Check for circular dependencies
+      components.forEach(component => {
+        if (state.actions.hasCircularDependency(component.id, component.dependencies)) {
+          issues.push(`Circular dependency detected involving: ${component.title}`)
+        }
+      })
+      
+      // Check 4: Check for orphaned components (no dependents and not root-level)
+      const hasDependents = new Set()
+      components.forEach(component => {
+        component.dependencies.forEach(depId => {
+          hasDependents.add(depId)
+        })
+      })
+      
+      const orphanedComponents = components.filter(component => 
+        !hasDependents.has(component.id) && 
+        component.dependencies.length > 0 &&
+        component.type !== 'GOALS' // Goals can be root level
+      )
+      
+      orphanedComponents.forEach(component => {
+        issues.push(`Potentially orphaned component: ${component.title} (has dependencies but no dependents)`)
+      })
+      
+      // Check 5: Validate component content completeness
+      components.forEach(component => {
+        if (component.status === 'SKETCH' && (!component.userInput || component.userInput.trim() === '')) {
+          issues.push(`${component.title} has no user input - consider adding content or generating AI content`)
+        }
+        
+        if (component.status === 'ERROR') {
+          issues.push(`${component.title} has generation errors - consider regenerating content`)
+        }
+      })
+      
+      // Check 6: Validate logical structure
+      const goalComponents = components.filter(c => c.type === 'GOALS')
+      const caseComponents = components.filter(c => c.type === 'CASE')
+      
+      if (goalComponents.length === 0) {
+        issues.push('No learning goals defined - consider adding learning objectives')
+      }
+      
+      if (caseComponents.length === 0) {
+        issues.push('No case description defined - consider adding a case background')
+      }
+      
+      if (goalComponents.length > 1) {
+        issues.push('Multiple learning goals components found - consider consolidating')
+      }
+      
+      // Report results
+      console.log('🔍 Consistency check complete:', issues.length, 'issues found')
+      
+      if (issues.length === 0) {
+        state.actions.addNotification('✅ Consistency check passed! No issues found.', 'success')
+      } else {
+        console.warn('⚠️ Consistency issues:', issues)
+        
+        // Show summary notification
+        state.actions.addNotification(
+          `⚠️ Found ${issues.length} consistency issue${issues.length > 1 ? 's' : ''}. Check console for details.`, 
+          'warning'
+        )
+        
+        // Log each issue individually for debugging
+        issues.forEach((issue, index) => {
+          console.warn(`Issue ${index + 1}:`, issue)
+        })
+      }
+      
+      return {
+        passed: issues.length === 0,
+        issues,
+        componentCount: components.length,
+        summary: {
+          totalComponents: components.length,
+          goalsComponents: goalComponents.length,
+          caseComponents: caseComponents.length,
+          witnessComponents: components.filter(c => c.type === 'WITNESS').length,
+          documentComponents: components.filter(c => c.type === 'DOCUMENT').length,
+          generatedComponents: components.filter(c => c.status === 'GENERATED').length,
+          errorComponents: components.filter(c => c.status === 'ERROR').length
+        }
       }
     }
   }

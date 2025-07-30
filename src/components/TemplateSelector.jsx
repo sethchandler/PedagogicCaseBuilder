@@ -7,13 +7,23 @@ import useStore from '../store'
 console.log('🎯 Loading TemplateSelector component...')
 
 const TemplateSelector = ({ isOpen, onClose }) => {
+  console.log('🔥🔥🔥 TemplateSelector FUNCTION CALLED - isOpen:', isOpen, 'onClose:', typeof onClose)
   const [selectedTemplate, setSelectedTemplate] = useState(null)
   const { actions } = useStore()
   const templates = getAvailableTemplates()
 
   console.log('🎯 TemplateSelector render - isOpen:', isOpen, 'templates:', templates.length)
+  console.log('🎯 Available templates:', templates)
 
-  if (!isOpen) return null
+  // Temporarily disable the isOpen check for debugging  
+  if (!isOpen) {
+    console.log('🎯 TemplateSelector not rendering - isOpen is false')
+    return null
+  }
+  
+  console.log('🚨🚨🚨 TEMPLATESELECTOR IS RENDERING - THIS SHOULD BE VISIBLE!')
+
+  console.log('🎯 TemplateSelector rendering modal with', templates.length, 'templates')
 
   const handleLoadTemplate = () => {
     if (!selectedTemplate) {
@@ -75,8 +85,8 @@ const TemplateSelector = ({ isOpen, onClose }) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4" style={{ zIndex: 9999 }}>
+      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center space-x-2">
@@ -94,7 +104,7 @@ const TemplateSelector = ({ isOpen, onClose }) => {
         </div>
 
         {/* Content */}
-        <div className="flex overflow-hidden" style={{ height: '600px' }}>
+        <div className="flex overflow-hidden" style={{ height: '500px' }}>
           {/* Template List */}
           <div className="w-1/2 border-r border-gray-200 overflow-y-auto">
             <div className="p-6">
@@ -209,7 +219,7 @@ const TemplateSelector = ({ isOpen, onClose }) => {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
+        <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">
           <div className="text-sm text-gray-600">
             {selectedTemplate && (
               <>

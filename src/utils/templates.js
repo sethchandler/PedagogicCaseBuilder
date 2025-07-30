@@ -186,10 +186,12 @@ const processTemplate = (template) => {
 export const loadTemplate = (templateId) => {
   console.log('📋 Loading template:', templateId)
   
-  const template = TEMPLATES[templateId]
+  // Find template by ID (not object key)
+  const template = Object.values(TEMPLATES).find(t => t.id === templateId)
   if (!template) {
     console.error('❌ Template not found:', templateId)
-    throw new Error('Template not found')
+    console.log('Available template IDs:', Object.values(TEMPLATES).map(t => t.id))
+    throw new Error(`Template not found: ${templateId}`)
   }
   
   const components = processTemplate(template)
